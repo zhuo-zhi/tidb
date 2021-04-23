@@ -155,8 +155,33 @@ func (s *partitionProcessor) findUsedPartitions(ctx sessionctx.Context, tbl tabl
 			}
 			used = append(used, int(idx))
 		} else {
-			used = []int{FullRange}
-			break
+			if pe.(*expression.Column).RetType.EvalType() == types.ETInt {
+				num_partitions := len(pi.Definitions)
+				pos_high, _, err := pe.EvalInt(ctx, chunk.MutRowFromDatums(r.HighVal).ToRow())
+				if err != nil {
+					return nil, nil, err
+				}
+
+				pos_low, _, err := pe.EvalInt(ctx, chunk.MutRowFromDatums(r.LowVal).ToRow())
+				if err != nil {
+					return nil, nil, err
+				}
+
+				// to do: consider whether the range is closed or open
+				range_scalar := pos_high - pos_low
+				if range_scalar < int64(num_partitions) {
+					for i := pos_low; i <= pos_high; i++ {
+						idx := math.Abs(i % int64(pi.Num))
+						if len(partitionNames) > 0 && !s.findByName(partitionNames, pi.Definitions[idx].Name.L) {
+							continue
+						}
+						used = append(used, int(idx))
+					}
+				}
+			} else {
+				used = []int{FullRange}
+				break
+			}
 		}
 	}
 	if len(partitionNames) > 0 && len(used) == 1 && used[0] == FullRange {
