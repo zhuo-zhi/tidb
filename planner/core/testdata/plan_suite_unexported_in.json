@@ -491,15 +491,6 @@
     ]
   },
   {
-    "name": "TestTableHashPartitionPruning",
-    "cases": [
-      "select * from t where t.ptn between 10 and 11",
-      "select * from t where t.ptn between 5 and 8",
-      "select * from t where t.ptn between 5 and 12",
-      "select * from t where (t.ptn <= 10 and t.ptn >= 8) or (t.ptn <= 13 and t.ptn >= 11) or (t.ptn <= 16 and t.ptn >= 14)"
-    ]
-  },
-  {
     "name": "TestJoinPredicatePushDown",
     "cases": [
       // issue #7628, inner join

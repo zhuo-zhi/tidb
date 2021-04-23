@@ -481,29 +481,3 @@ func MockPartitionInfoSchema(definitions []model.PartitionDefinition) infoschema
 	is := infoschema.MockInfoSchema([]*model.TableInfo{tableInfo})
 	return is
 }
-
-// MockPartitionInfoSchema mocks an info schema for partition table.
-func MockHashPartitionInfoSchema(definitions []model.PartitionDefinition) infoschema.InfoSchema {
-	tableInfo := MockSignedTable()
-	cols := make([]*model.ColumnInfo, 0, len(tableInfo.Columns))
-	cols = append(cols, tableInfo.Columns...)
-	last := tableInfo.Columns[len(tableInfo.Columns)-1]
-	cols = append(cols, &model.ColumnInfo{
-		State:     model.StatePublic,
-		Offset:    last.Offset + 1,
-		Name:      model.NewCIStr("ptn"),
-		FieldType: newLongType(),
-		ID:        last.ID + 1,
-	})
-	partition := &model.PartitionInfo{
-		Type:        model.PartitionTypeHash,
-		Expr:        "ptn",
-		Enable:      true,
-		Definitions: definitions,
-		Num:         uint64(len(definitions)),
-	}
-	tableInfo.Columns = cols
-	tableInfo.Partition = partition
-	is := infoschema.MockInfoSchema([]*model.TableInfo{tableInfo})
-	return is
-}

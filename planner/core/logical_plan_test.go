@@ -446,62 +446,6 @@ func (s *testPlanSuite) TestTablePartition(c *C) {
 	}
 }
 
-func (s *testPlanSuite) TestTableHashPartitionPruning(c *C) {
-	defer testleak.AfterTest(c)()
-	definitions := []model.PartitionDefinition{
-		{
-			ID:   40,
-			Name: model.NewCIStr("p0"),
-		},
-		{
-			ID:   41,
-			Name: model.NewCIStr("p1"),
-		},
-		{
-			ID:   42,
-			Name: model.NewCIStr("p2"),
-		},
-		{
-			ID:   43,
-			Name: model.NewCIStr("p3"),
-		},
-		{
-			ID:   44,
-			Name: model.NewCIStr("p4"),
-		},
-		{
-			ID:   45,
-			Name: model.NewCIStr("p5"),
-		},
-	}
-	is := MockHashPartitionInfoSchema(definitions)
-
-	var (
-		input  []string
-		output []string
-	)
-	s.testData.GetTestCases(c, &input, &output)
-
-	ctx := context.Background()
-	for i, ca := range input {
-		comment := Commentf("for %s", ca)
-		stmt, err := s.ParseOneStmt(ca, "", "")
-		c.Assert(err, IsNil, comment)
-		s.testData.OnRecord(func() {
-
-		})
-		p, _, err := BuildLogicalPlan(ctx, s.ctx, stmt, is)
-		c.Assert(err, IsNil)
-		p, err = logicalOptimize(context.TODO(), flagDecorrelate|flagPrunColumns|flagPrunColumnsAgain|flagPredicatePushDown|flagPartitionProcessor, p.(LogicalPlan))
-		c.Assert(err, IsNil)
-		planString := ToString(p)
-		s.testData.OnRecord(func() {
-			output[i] = planString
-		})
-		c.Assert(ToString(p), Equals, output[i], Commentf("for %s", ca))
-	}
-}
-
 func (s *testPlanSuite) TestSubquery(c *C) {
 	defer testleak.AfterTest(c)()
 	var input, output []string
