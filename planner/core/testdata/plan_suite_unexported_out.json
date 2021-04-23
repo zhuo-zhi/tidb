@@ -877,6 +877,15 @@
     ]
   },
   {
+    "Name": "TestTableHashPartitionPruning",
+    "Cases": [
+      "PartitionUnionAll{Partition(44)->Partition(45)}->Projection",
+      "PartitionUnionAll{Partition(40)->Partition(41)->Partition(42)->Partition(45)}->Projection",
+      "PartitionUnionAll{Partition(40)->Partition(41)->Partition(42)->Partition(43)->Partition(44)->Partition(45)}->Projection",
+      "PartitionUnionAll{Partition(40)->Partition(41)->Partition(42)->Partition(43)->Partition(44)->Partition(45)}->Projection"
+    ]
+  },
+  {
     "Name": "TestJoinPredicatePushDown",
     "Cases": [
       {

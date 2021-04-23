@@ -155,8 +155,13 @@ func (s *partitionProcessor) findUsedPartitions(ctx sessionctx.Context, tbl tabl
 			}
 			used = append(used, int(idx))
 		} else {
+			// processing hash partition pruning. eg:
+			// create table t2 (a int, b bigint, index (a), index (b)) partition by hash(a) partitions 10;
+			// desc select * from t2 where t2.a between 10 and 15;
+			// determine whether the partition key is int
 			if pe.(*expression.Column).RetType.EvalType() == types.ETInt {
 				num_partitions := len(pi.Definitions)
+
 				pos_high, _, err := pe.EvalInt(ctx, chunk.MutRowFromDatums(r.HighVal).ToRow())
 				if err != nil {
 					return nil, nil, err
@@ -169,6 +174,8 @@ func (s *partitionProcessor) findUsedPartitions(ctx sessionctx.Context, tbl tabl
 
 				// to do: consider whether the range is closed or open
 				range_scalar := pos_high - pos_low
+
+				// if range is less than the number of partitions, there will be unsed partitions we can prune out.
 				if range_scalar < int64(num_partitions) {
 					for i := pos_low; i <= pos_high; i++ {
 						idx := math.Abs(i % int64(pi.Num))
@@ -177,6 +184,9 @@ func (s *partitionProcessor) findUsedPartitions(ctx sessionctx.Context, tbl tabl
 						}
 						used = append(used, int(idx))
 					}
+				} else {
+					used = []int{FullRange}
+					break
 				}
 			} else {
 				used = []int{FullRange}
@@ -195,6 +205,12 @@ func (s *partitionProcessor) findUsedPartitions(ctx sessionctx.Context, tbl tabl
 			ret = append(ret, used[i])
 		}
 	}
+
+	// if all the partitions are used
+	if len(ret) == len(pi.Definitions) {
+		ret = []int{FullRange}
+	}
+
 	return ret, datchedResult.RemainedConds, nil
 }
 
